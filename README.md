@@ -15,5 +15,5 @@ Wining states:
 - all your pieces make it to the oposite side
 
 Test boards:
-["www-","--w","--","---","bbbb"]
-["www-","---", "-w", "-b-", "b-bb"]  
+- ["www-","--w","--","---","bbbb"]
+- ["www-","---", "-w", "-b-", "b-bb"]  
