@@ -1,11 +1,19 @@
 --Caroline McQuatt 
 --Peter Zhang
 
+import Data.Tree
+
 
 --TODO depth first search
 oska_x1y2 :: [String] -> Char -> Int -> [String]
-oska_x1y2 board side m = board
+oska_x1y2 board side moves = board
 
+
+--TODO what should this return?
+statesearch unexplored tree moves = tree
+
+--TODO
+analyze_board board side = 10
 
 
 --does not check for valid starting indexes or tile, must be correct
@@ -60,7 +68,19 @@ number_pieces board player
 	| null board							= 0
 	| otherwise								= (count_in_row (head board) player) + (number_pieces (tail board) player)
 
+--expects either 'b' or 'w' for player
+isWinningBoard :: [String] -> Char -> Bool
+isWinningBoard board player
+	| player == 'w'							= number_pieces board 'b' == 0 || checklast board 0 ((length board) - 1) 'w'
+	| otherwise								= number_pieces board 'w' == 0 || checklast board 0 0 'w'
+
 --helpers-------------------------------------------------------------------------
+checklast :: [String] -> Int -> Int -> Char -> Bool
+checklast board i row player
+	| null board 							= True
+	| i == row 								= (elem player (head board)) && checklast (tail board) (i + 1) row player
+	| otherwise								=  not((elem player (head board))) && checklast (tail board) (i + 1) row player 
+
 
 count_in_row :: String -> Char -> Int
 count_in_row row player
