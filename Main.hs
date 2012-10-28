@@ -1,7 +1,6 @@
 --Caroline McQuatt 
 --Peter Zhang
 
---data Board a = Board { getBoard :: a } deriving (Eq, Show)
 data Tree a =
 	 Branch { 
     	board :: [String], 
@@ -10,8 +9,6 @@ data Tree a =
     deriving (Eq, Show)
 
 
-
---TODO
 oska_x1y2 :: [String] -> Char -> Int -> [String]
 oska_x1y2 board player moves = 
 	analyze_board (Branch board (statesearch [board] moves player)) player
