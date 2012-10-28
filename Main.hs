@@ -1,19 +1,39 @@
 --Caroline McQuatt 
 --Peter Zhang
 
-import Data.Tree
+--data Board a = Board { getBoard :: a } deriving (Eq, Show)
+data Tree a =
+	 Branch { 
+    	board :: [String], 
+    	children :: [Tree [String]]
+    	} 
+    deriving (Eq, Show)
 
 
---TODO depth first search
-oska_x1y2 :: [String] -> Char -> Int -> [String]
-oska_x1y2 board side moves = board
-
-
---TODO what should this return?
-statesearch unexplored tree moves = tree
 
 --TODO
-analyze_board board side = 10
+oska_x1y2 :: [String] -> Char -> Int -> [String]
+oska_x1y2 board player moves = 
+	analyze_board (Branch board (statesearch [board] moves player)) player
+
+
+--TODO check branches for cycles
+statesearch :: [[String]] -> Int -> Char -> [Tree [String]]
+statesearch unexplored moves player
+	| null unexplored || moves == 0		= []
+	| not (null newstates)				= (map (\x -> (Branch x (statesearch (genNewStates x player) (moves - 1) player))) newstates)
+	| otherwise							= statesearch (tail unexplored) (moves - 1) player
+		where newstates		= (genNewStates (head unexplored) player)
+
+
+--TODO
+genNewStates :: [String] -> Char -> [[String]]
+genNewStates board player = [board, board, board]
+
+
+--TODO
+analyze_board :: Tree [String] -> Char -> [String]
+analyze_board (Branch board children) side = board
 
 
 --does not check for valid starting indexes or tile, must be correct
