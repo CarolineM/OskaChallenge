@@ -1,6 +1,6 @@
 --Caroline McQuatt 
 --Peter Zhang
-
+maze1 = ["www-","--w","--","---","bbbb"];
 data Tree a =
 	 Branch { 
     	board :: [String], 
@@ -25,9 +25,32 @@ statesearch unexplored moves player
 
 --TODO
 genNewStates :: [String] -> Char -> [[String]]
-genNewStates board player = [board, board, board]
+genNewStates board player = [["a"]]
 
 
+-- generate new states for a given piece at given location c and r
+-- genNewStatesforPiece maze1 0 2 0
+-- returns [["ww--","-ww","--","---","bbbb"]]
+genNewStatesforPiece ::[String] -> Int -> Int ->  Int -> [[String]]
+genNewStatesforPiece board c r count_r
+        | ((length board) - 1) == count_r = (movesForPieceAtRow board count_r 0 c r )
+        |  otherwise                = (movesForPieceAtRow board count_r 0 c r ) ++ (genNewStatesforPiece board c r (count_r+1))
+
+
+
+-- get possible moves for a single piece at given roll.. does not account for jumps, havent figured out how to jump >_>
+-- movesForPieceAtRow maze1 1 0 0 1
+-- returns [["w-w-","w-w","--","---","bbbb"],["w-w-","-ww","--","---","bbbb"]]
+movesForPieceAtRow :: [String] -> Int -> Int -> Int -> Int -> [[String]]
+movesForPieceAtRow board row col piece_r piece_c 
+        | ((length (getRow board row)) - 1) == col = newstate
+        |otherwise = newstate ++ (movesForPieceAtRow board row (col+1) piece_r piece_c)
+        where
+                side     = (getTile board piece_r piece_c)
+                newstate = (do if (isLegalMove board piece_r piece_c row col side) 
+                                                        then [(genMove board piece_r piece_c row col (-111) (-111))] -- CAROLINE can u take a look at this? i dont know what the jump parameters in genMove does exactly so i just put random -111
+                                                        else [])
+                
 --TODO
 analyze_board :: Tree [String] -> Char -> [String]
 analyze_board (Branch board children) side = board
@@ -40,9 +63,7 @@ isLegalMove board cur_r cur_c move_r move_c side
 	| (distance == 1) && cur_r == mid_row	= mv_tile == '-' && (isLegalMid cur_c move_c False)
 	| (distance == 1)						= valid_col_reg && mv_tile == '-'
 	| (distance == 2) && 
-		(getJumpRow side cur_r) == mid_row	= (mv_tile == '-') &&
-												(not ((jmp_tile == side) || (jmp_tile == '-'))) &&
-													(isLegalMid cur_c move_c True)
+		(getJumpRow side cur_r) == mid_row	= (mv_tile == '-') && (not ((jmp_tile == side) || (jmp_tile == '-'))) && (isLegalMid cur_c move_c True)
 	| (distance == 2)						= valid_col_jmp && (mv_tile == '-') &&
 												(not ((jmp_tile == side) || (jmp_tile == '-')))
 	| otherwise								= False
@@ -158,3 +179,4 @@ getTile board row col =
 getRow :: [a] -> Int -> a
 getRow board row = 
 	board !! row
+
