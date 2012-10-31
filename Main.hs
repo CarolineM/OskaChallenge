@@ -18,19 +18,28 @@ oska_x1y2 board player moves =
 statesearch :: [[String]] -> Int -> Char -> [Tree [String]]
 statesearch unexplored moves player
 	| null unexplored || moves == 0		= []
-	| not (null newstates)				= (map (\x -> (Branch x (statesearch (genNewStates x player) (moves - 1) player))) newstates)
-	| otherwise							= statesearch (tail unexplored) (moves - 1) player
-		where newstates		= (genNewStates (head unexplored) player)
+	| not (null newstates)				= (map (\x -> (Branch x (statesearch (genNewStates x player) (moves - 1) next_player))) newstates)
+	| otherwise							= statesearch (tail unexplored) (moves - 1) next_player
+		where 
+			newstates		= (genNewStates (head unexplored) player)
+			next_player		= if (player == 'w') then
+			  					'b'
+			  					else
+			  						'w'
 
 
 --TODO
 genNewStates :: [String] -> Char -> [[String]]
-genNewStates board player = [board, board, board]
+genNewStates board player = [board, board]
 
 
 --TODO
 analyze_board :: Tree [String] -> Char -> [String]
 analyze_board (Branch board children) side = board
+
+--total_branch :: Tree [String] -> ([String], Int)
+--total_branch b_root
+
 
 
 --does not check for valid starting indexes or tile, must be correct
