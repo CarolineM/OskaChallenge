@@ -30,12 +30,25 @@ statesearch unexplored moves player
 
 --TODO
 genNewStates :: [String] -> Char -> [[String]]
-genNewStates board player = [board, board]
+genNewStates board player = [["TEST1"], ["TEST2"]]
 
 
---TODO
 analyze_board :: Tree [String] -> Char -> [String]
-analyze_board (Branch board children) side = board
+analyze_board root side =
+	if null (children root) then
+		(board root) -- TODO test. should mean no available moves, so return root
+		else
+			getboard branch_scores max_score				
+		where 
+			branch_scores	= map total_branch (children root)
+			max_score 		= maximum (snd (unzip branch_scores))
+
+getboard :: [([String],Int)] -> Int -> [String]
+getboard branch_scores max_score
+	| null branch_scores			= []
+	| (snd (head branch_scores)) == max_score 
+									= (fst (head branch_scores))
+    | otherwise						= getboard (tail branch_scores) max_score
 
 total_branch :: Tree [String] -> ([String], Int)
 total_branch b_root = 
