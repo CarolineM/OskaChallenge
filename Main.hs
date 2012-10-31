@@ -37,9 +37,20 @@ genNewStates board player = [board, board]
 analyze_board :: Tree [String] -> Char -> [String]
 analyze_board (Branch board children) side = board
 
---total_branch :: Tree [String] -> ([String], Int)
---total_branch b_root
+total_branch :: Tree [String] -> ([String], Int)
+total_branch b_root = 
+	((board b_root), ((totalboard (board b_root)) + (totalboards (children b_root))))
 
+totalboards :: [Tree [String]] -> Int
+totalboards lot
+	| null lot						= 0
+	| otherwise						= (totalboard (board (head lot))) + 
+										(totalboards (children (head lot))) + 
+										(totalboards (tail lot))
+
+--TODO static board analysis
+totalboard :: [String] -> Int
+totalboard board = 10
 
 
 --does not check for valid starting indexes or tile, must be correct
