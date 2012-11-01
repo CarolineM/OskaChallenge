@@ -52,19 +52,19 @@ getboard branch_scores max_score
 
 total_branch :: Tree [String] -> Char -> ([String], Int)
 total_branch b_root side = 
-	((board b_root), ((totalboard (board b_root) side) + (totalboards (children b_root) next_player)))
+	((board b_root), ((totalboard (board b_root) side) + (totalboards (children b_root) next_player side)))
 	where
 		next_player 			= if side == 'w' then
 										'b'
 										else
 											'w'
-
-totalboards :: [Tree [String]] -> Char -> Int
-totalboards lot lastmoved
+--TODO this is wrong
+totalboards :: [Tree [String]] -> Char -> Char -> Int
+totalboards lot lastmoved maxplayer
 	| null lot						= 0
 	| otherwise						= (totalboard (board (head lot)) lastmoved) + 
-										(totalboards (children (head lot)) next_player) + 
-										(totalboards (tail lot) lastmoved)
+										(totalboards (children (head lot)) next_player maxplayer) + 
+										(totalboards (tail lot) lastmoved maxplayer)
 		where 
 			next_player 			= if lastmoved == 'w' then
 										'b'
@@ -73,10 +73,71 @@ totalboards lot lastmoved
 
 --TODO static board analysis
 totalboard :: [String] -> Char -> Int
-totalboard board lastmoved = if (lastmoved == 'w') then
-								10
+totalboard board player
+	| isWinningBoard board player							= 100
+	| isWinningBoard board opponent							= (-100)
+	| one_left_case board player 							= 50
+	| one_left_case board opponent 							= (-50)
+	| test_blocked_from_end 
+		(collumn_num_with_test edgerow opponent 0)
+		(collumn_num_with_test endrow '-' 0)				= 20 --opponenet is blocked from winning 
+	| test_blocked_from_end 
+		(collumn_num_with_test edgerow player 0)
+		(collumn_num_with_test endrow '-' 0)				= (-20) --player is blocked from winning
+
+		where 
+			opponent	=	if player == 'w' then
+  								'b'
+  								else
+  									'w' 
+  			endrow		=	if player == 'b' then
+							 	(board !! 0)
 								else
-									3
+									(board !! ((length board) -1))
+			edgerow		=	if player == 'b' then
+							 	(board !! 1)
+								else
+									(board !! ((length board) -2))
+
+
+test_blocked_from_end pindex openindex =
+	(not (null pindex)) && (blocked_from_end pindex openindex)
+
+blocked_from_end pindex openindex
+	| null pindex						= True
+	| elem (head pindex) openindex || elem ((head pindex) + 1) openindex
+										= False
+	| otherwise 						= True && blocked_from_end (tail pindex) openindex
+
+collumn_num_with_test row test_value i
+	| null row	   						= []
+	| (head row) == test_value			= i : collumn_num_with_test (tail row) test_value (i + 1)
+	| otherwise							= collumn_num_with_test (tail row) test_value (i + 1)				
+
+one_left_case :: [String] -> Char -> Bool
+one_left_case board player =
+  number_pieces cut_board player == 1 &&
+  player_in_row (offensive_rows board player) board player
+  		where
+  			cut_board	=	if player == 'w' then
+  								(init board)
+  								else
+  									(tail board)
+
+player_in_row :: [Int] -> [String] -> Char -> Bool
+player_in_row lor board player
+	| null lor			= False
+	| otherwise			= elem player (board !! (head lor)) || player_in_row (tail lor) board player
+
+offensive_rows :: [String] -> Char -> [Int]
+offensive_rows board player =
+	if player == 'w' then
+		[(mid+1)..(length board - 2)]
+		else
+			[(mid-1)..1]
+		where
+			mid 	=	div ((length board) - 1) 2
+
 
 --does not check for valid starting indexes or tile, must be correct
 isLegalMove :: [String] -> Int -> Int -> Int -> Int -> Char -> Bool
