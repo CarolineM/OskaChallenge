@@ -40,7 +40,7 @@ analyze_board root side =
 		else
 			getboard branch_scores max_score				
 		where 
-			branch_scores	= map total_branch (children root)
+			branch_scores	= map (\x -> (total_branch x side)) (children root) 
 			max_score 		= maximum (snd (unzip branch_scores))
 
 getboard :: [([String],Int)] -> Int -> [String]
@@ -50,21 +50,33 @@ getboard branch_scores max_score
 									= (fst (head branch_scores))
     | otherwise						= getboard (tail branch_scores) max_score
 
-total_branch :: Tree [String] -> ([String], Int)
-total_branch b_root = 
-	((board b_root), ((totalboard (board b_root)) + (totalboards (children b_root))))
+total_branch :: Tree [String] -> Char -> ([String], Int)
+total_branch b_root side = 
+	((board b_root), ((totalboard (board b_root) side) + (totalboards (children b_root) next_player)))
+	where
+		next_player 			= if side == 'w' then
+										'b'
+										else
+											'w'
 
-totalboards :: [Tree [String]] -> Int
-totalboards lot
+totalboards :: [Tree [String]] -> Char -> Int
+totalboards lot lastmoved
 	| null lot						= 0
-	| otherwise						= (totalboard (board (head lot))) + 
-										(totalboards (children (head lot))) + 
-										(totalboards (tail lot))
+	| otherwise						= (totalboard (board (head lot)) lastmoved) + 
+										(totalboards (children (head lot)) next_player) + 
+										(totalboards (tail lot) lastmoved)
+		where 
+			next_player 			= if lastmoved == 'w' then
+										'b'
+										else
+											'w'
 
 --TODO static board analysis
-totalboard :: [String] -> Int
-totalboard board = 10
-
+totalboard :: [String] -> Char -> Int
+totalboard board lastmoved = if (lastmoved == 'w') then
+								10
+								else
+									3
 
 --does not check for valid starting indexes or tile, must be correct
 isLegalMove :: [String] -> Int -> Int -> Int -> Int -> Char -> Bool
