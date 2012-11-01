@@ -74,7 +74,7 @@ movesForPieceAtRow board row col piece_r piece_c
         | otherwise = newstate ++ (movesForPieceAtRow board row (col+1) piece_r piece_c)
         where
                 side     = (getTile board piece_r piece_c)
-                newstate = (do if (isLegalMove board piece_r piece_c row col side False) 
+                newstate = (do if (isLegalMove board piece_r piece_c row col side) 
                                                         then [(genMove board piece_r piece_c row col (-111) (-111))] 
                                                         else [])
 
@@ -185,21 +185,36 @@ offensive_rows board player =
 
 
 --does not check for valid starting indexes or tile, must be correct
-isLegalMove :: [String] -> Int -> Int -> Int -> Int -> Char -> Bool -> Bool
-isLegalMove board cur_r cur_c move_r move_c side is_jmp
+isLegalMove :: [String] -> Int -> Int -> Int -> Int -> Char -> Bool
+isLegalMove board cur_r cur_c move_r move_c side
         | (not row_exists) || (not col_exists)            = False
-        | (distance == 1) && cur_r == mid_row             = mv_tile == '-' && (isLegalMid cur_c move_c False)
-        | (distance == 1)                                 = valid_col_reg && mv_tile == '-'
-        | (distance == 2) && is_jmp &&
-                (getJumpRow side cur_r) == mid_row        = (mv_tile == '-') && (not ((jmp_tile == side) || (jmp_tile == '-'))) && (isLegalMid cur_c move_c True)
-        | (distance == 2) && is_jmp                       = valid_col_jmp && (mv_tile == '-') && (not ((jmp_tile == side) || (jmp_tile == '-')))
+        | (distance == 1) && cur_r == mid_row 
+        	&& (isLegalMid cur_c move_c False)            = mv_tile == '-' 
+        | (distance == 1) && valid_col_reg                = mv_tile == '-'
+        | otherwise                                       = False
+        where
+                mid_row                      = div ((length board) - 1) 2
+                distance                     = abs (cur_r - move_r)
+                row_exists                   = (move_r >= 0) && (move_r < (length board)) 
+                col_exists                   = (move_c >= 0) && (move_c < (length (getRow board move_r))) 
+                valid_col_reg                = (move_c == cur_c) || (move_c == (cur_c - 1))
+                mv_tile                      = getTile board move_r move_c
+
+
+--does not check for valid starting indexes or tile, must be correct
+isLegalJump :: [String] -> Int -> Int -> Int -> Int -> Char -> Bool
+isLegalJump board cur_r cur_c move_r move_c side
+        | (not row_exists) || (not col_exists)            = False
+        | (distance == 2) && 
+                (getJumpRow side cur_r) == mid_row &&
+                (isLegalMid cur_c move_c True)            = (mv_tile == '-') && (not ((jmp_tile == side) || (jmp_tile == '-')))
+        | (distance == 2) && valid_col_jmp                = (mv_tile == '-') && (not ((jmp_tile == side) || (jmp_tile == '-')))
         | otherwise                                       = False
         where
                 mid_row                      = div ((length board) - 1) 2 
                 distance                     = abs (cur_r - move_r)
                 row_exists                   = (move_r >= 0) && (move_r < (length board)) 
-                col_exists                   = (move_c >= 0) && (move_c < (length (getRow board move_r))) 
-                valid_col_reg                = (move_c == cur_c) || (move_c == (cur_c - 1))
+                col_exists                   = (move_c >= 0) && (move_c < (length (getRow board move_r)))
                 valid_col_jmp                = (move_c == cur_c) || (move_c == (cur_c - 2)) 
                 mv_tile                      = getTile board move_r move_c
                 jmp_tile                      = if (isJumpMid cur_r mid_row side) then
