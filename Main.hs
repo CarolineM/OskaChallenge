@@ -17,10 +17,17 @@ oska_x1y2 board player moves =
 --TODO check branches for cycles
 statesearch :: [[String]] -> Int -> Char -> [Tree [String]]
 statesearch unexplored moves player
-        | null unexplored || moves == 0                = []
-        | not (null newstates)                                = (map (\x -> (Branch x (statesearch (genNewStates x player) (moves - 1) player))) newstates)
-        | otherwise                                                        = statesearch (tail unexplored) (moves - 1) player
-                where newstates                = (genNewStates (head unexplored) player)
+
+	| null unexplored || moves == 0		= []
+	| not (null newstates)				= (map (\x -> (Branch x (statesearch (genNewStates x player) (moves - 1) next_player))) newstates)
+	| otherwise							= statesearch (tail unexplored) (moves - 1) next_player
+		where 
+			newstates		= (genNewStates (head unexplored) player)
+			next_player		= if (player == 'w') then
+			  					'b'
+			  					else
+			  						'w'
+
 
 
 --TODO
@@ -70,11 +77,51 @@ movesForPieceAtRow board row col piece_r piece_c
                 newstate = (do if (isLegalMove board piece_r piece_c row col side) 
                                                         then [(genMove board piece_r piece_c row col (-111) (-111))] 
                                                         else [])
-                
---TODO
-analyze_board :: Tree [String] -> Char -> [String]
-analyze_board (Branch board children) side = board
 
+analyze_board :: Tree [String] -> Char -> [String]
+analyze_board root side =
+	if null (children root) then
+		(board root) -- TODO test. should mean no available moves, so return root
+		else
+			getboard branch_scores max_score				
+		where 
+			branch_scores	= map (\x -> (total_branch x side)) (children root) 
+			max_score 		= maximum (snd (unzip branch_scores))
+
+getboard :: [([String],Int)] -> Int -> [String]
+getboard branch_scores max_score
+	| null branch_scores			= []
+	| (snd (head branch_scores)) == max_score 
+									= (fst (head branch_scores))
+    | otherwise						= getboard (tail branch_scores) max_score
+
+total_branch :: Tree [String] -> Char -> ([String], Int)
+total_branch b_root side = 
+	((board b_root), ((totalboard (board b_root) side) + (totalboards (children b_root) next_player)))
+	where
+		next_player 			= if side == 'w' then
+										'b'
+										else
+											'w'
+
+totalboards :: [Tree [String]] -> Char -> Int
+totalboards lot lastmoved
+	| null lot						= 0
+	| otherwise						= (totalboard (board (head lot)) lastmoved) + 
+										(totalboards (children (head lot)) next_player) + 
+										(totalboards (tail lot) lastmoved)
+		where 
+			next_player 			= if lastmoved == 'w' then
+										'b'
+										else
+											'w'
+
+--TODO static board analysis
+totalboard :: [String] -> Char -> Int
+totalboard board lastmoved = if (lastmoved == 'w') then
+								10
+								else
+									3
 
 --does not check for valid starting indexes or tile, must be correct
 isLegalMove :: [String] -> Int -> Int -> Int -> Int -> Char -> Bool
