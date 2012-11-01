@@ -60,8 +60,8 @@ findTilesOnRow row side countx y
 -- returns [["ww--","-ww","--","---","bbbb"]]
 genNewStatesforPiece ::[String] -> Int -> Int ->  Int -> [[String]]
 genNewStatesforPiece board c r count_r
-        | ((length board) - 1) == count_r = (movesForPieceAtRow board count_r 0 c r )
-        |  otherwise                = (movesForPieceAtRow board count_r 0 c r ) ++ (genNewStatesforPiece board c r (count_r+1))
+        | ((length board) - 1) == count_r = (movesForPieceAtRow board count_r 0 r c)
+        |  otherwise                = (movesForPieceAtRow board count_r 0 r c) ++ (genNewStatesforPiece board c r (count_r+1))
 
 
 
