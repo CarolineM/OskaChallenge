@@ -71,10 +71,10 @@ genNewStatesforPiece board c r count_r
 movesForPieceAtRow :: [String] -> Int -> Int -> Int -> Int -> [[String]]
 movesForPieceAtRow board row col piece_r piece_c 
         | ((length (getRow board row)) - 1) == col = newstate
-        |otherwise = newstate ++ (movesForPieceAtRow board row (col+1) piece_r piece_c)
+        | otherwise = newstate ++ (movesForPieceAtRow board row (col+1) piece_r piece_c)
         where
                 side     = (getTile board piece_r piece_c)
-                newstate = (do if (isLegalMove board piece_r piece_c row col side) 
+                newstate = (do if (isLegalMove board piece_r piece_c row col side False) 
                                                         then [(genMove board piece_r piece_c row col (-111) (-111))] 
                                                         else [])
 
@@ -185,28 +185,27 @@ offensive_rows board player =
 
 
 --does not check for valid starting indexes or tile, must be correct
-isLegalMove :: [String] -> Int -> Int -> Int -> Int -> Char -> Bool
-isLegalMove board cur_r cur_c move_r move_c side
-        | (not row_exists) || (not col_exists)        = False
-        | (distance == 1) && cur_r == mid_row        = mv_tile == '-' && (isLegalMid cur_c move_c False)
-        | (distance == 1)                                                = valid_col_reg && mv_tile == '-'
-        | (distance == 2) && 
+isLegalMove :: [String] -> Int -> Int -> Int -> Int -> Char -> Bool -> Bool
+isLegalMove board cur_r cur_c move_r move_c side is_jmp
+        | (not row_exists) || (not col_exists)            = False
+        | (distance == 1) && cur_r == mid_row             = mv_tile == '-' && (isLegalMid cur_c move_c False)
+        | (distance == 1)                                 = valid_col_reg && mv_tile == '-'
+        | (distance == 2) && is_jmp &&
                 (getJumpRow side cur_r) == mid_row        = (mv_tile == '-') && (not ((jmp_tile == side) || (jmp_tile == '-'))) && (isLegalMid cur_c move_c True)
-        | (distance == 2)                                                = valid_col_jmp && (mv_tile == '-') &&
-                                                                                                (not ((jmp_tile == side) || (jmp_tile == '-')))
-        | otherwise                                                                = False
+        | (distance == 2) && is_jmp                       = valid_col_jmp && (mv_tile == '-') && (not ((jmp_tile == side) || (jmp_tile == '-')))
+        | otherwise                                       = False
         where
-                mid_row                                = div ((length board) - 1) 2 
-                distance                        = abs (cur_r - move_r)
-                row_exists                        = (move_r >= 0) && (move_r < (length board)) 
-                col_exists                        = (move_c >= 0) && (move_c < (length (getRow board move_r))) 
+                mid_row                      = div ((length board) - 1) 2 
+                distance                     = abs (cur_r - move_r)
+                row_exists                   = (move_r >= 0) && (move_r < (length board)) 
+                col_exists                   = (move_c >= 0) && (move_c < (length (getRow board move_r))) 
                 valid_col_reg                = (move_c == cur_c) || (move_c == (cur_c - 1))
                 valid_col_jmp                = (move_c == cur_c) || (move_c == (cur_c - 2)) 
-                mv_tile                                = getTile board move_r move_c
-                jmp_tile                        = if (isJumpMid cur_r mid_row side) then
+                mv_tile                      = getTile board move_r move_c
+                jmp_tile                      = if (isJumpMid cur_r mid_row side) then
                                                                 getTile board (getJumpRow side cur_r)  (getJTileColMid cur_c move_c)
                                                                 else
-                                                                        getTile board (getJumpRow side cur_r) (getJTileColNorm cur_c move_c)
+                                                                    getTile board (getJumpRow side cur_r) (getJTileColNorm cur_c move_c)
 
 --jump_r and jump_c should be negative if no jump
 genMove :: [String] -> Int -> Int -> Int -> Int -> Int -> Int -> [String]
@@ -221,48 +220,48 @@ genMove board cur_r cur_c move_r move_c jump_r jump_c = do
                                         move_r 0 new_move_row)
                                 jump_r 0 new_jump_row)
         where
-                old_cur_row                        = getRow board cur_r
-                new_cur_row                        = replace old_cur_row cur_c 0 '-'
+                old_cur_row                 = getRow board cur_r
+                new_cur_row                 = replace old_cur_row cur_c 0 '-'
                 old_move_row                = getRow board move_r 
-                piece                                 = old_cur_row !! cur_c
+                piece                       = old_cur_row !! cur_c
                 new_move_row                = replace old_move_row move_c 0 piece
                 old_jump_row                = board !! jump_r
                 new_jump_row                = replace old_jump_row jump_c 0 '-'
 
 number_pieces :: [String] -> Char -> Int
 number_pieces board player
-        | null board                                                        = 0
-        | otherwise                                                                = (count_in_row (head board) player) + (number_pieces (tail board) player)
+        | null board                     = 0
+        | otherwise                      = (count_in_row (head board) player) + (number_pieces (tail board) player)
 
 --expects either 'b' or 'w' for player
 isWinningBoard :: [String] -> Char -> Bool
 isWinningBoard board player
-        | player == 'w'                                                        = number_pieces board 'b' == 0 || checklast board 0 ((length board) - 1) 'w'
-        | otherwise                                                                = number_pieces board 'w' == 0 || checklast board 0 0 'w'
+        | player == 'w'                  = number_pieces board 'b' == 0 || checklast board 0 ((length board) - 1) 'w'
+        | otherwise                      = number_pieces board 'w' == 0 || checklast board 0 0 'w'
 
 --helpers-------------------------------------------------------------------------
 checklast :: [String] -> Int -> Int -> Char -> Bool
 checklast board i row player
-        | null board                                                         = True
-        | i == row                                                                 = (elem player (head board)) && checklast (tail board) (i + 1) row player
-        | otherwise                                                                =  not((elem player (head board))) && checklast (tail board) (i + 1) row player 
+        | null board                    = True
+        | i == row                      = (elem player (head board)) && checklast (tail board) (i + 1) row player
+        | otherwise                     =  not((elem player (head board))) && checklast (tail board) (i + 1) row player 
 
 
 count_in_row :: String -> Char -> Int
 count_in_row row player
-        | null row                                                                 = 0
-        | (head row) == player                                        = 1 + count_in_row (tail row) player
-        | otherwise                                                                = count_in_row (tail row) player
+        | null row                      = 0
+        | (head row) == player          = 1 + count_in_row (tail row) player
+        | otherwise                     = count_in_row (tail row) player
 
 --Helper: assumes row and cols exist
 isLegalMid :: Int -> Int -> Bool -> Bool 
 isLegalMid cur_c move_c is_jmp 
-        | is_jmp && cur_c == 0                                         = move_c == 1
-        | is_jmp && cur_c == 1                                        = (move_c == 0) || (move_c == 2)
-        | is_jmp && cur_c == 2                                        = move_c == 1
-        | cur_c == 0                                                        = (move_c == 0) || (move_c == 1)
-        | cur_c == 1                                                        = (move_c == 2) || (move_c == 1)
-        | otherwise                                                         = False
+        | is_jmp && cur_c == 0         = move_c == 1
+        | is_jmp && cur_c == 1         = (move_c == 0) || (move_c == 2)
+        | is_jmp && cur_c == 2         = move_c == 1
+        | cur_c == 0                   = (move_c == 0) || (move_c == 1)
+        | cur_c == 1                   = (move_c == 2) || (move_c == 1)
+        | otherwise                    = False
 
 --Helper
 isJumpMid :: Int -> Int -> Char -> Bool
@@ -281,24 +280,24 @@ getJumpRow side cur_r =
 --Helper: assumes that the jump is legal
 getJTileColNorm :: Int -> Int -> Int
 getJTileColNorm cur_c move_c
-        | cur_c == move_c                                                = cur_c
-        | (cur_c - 2) == move_c                                        = (cur_c - 1)
-        | otherwise                                                                = (-1)
+        | cur_c == move_c     		= cur_c
+        | (cur_c - 2) == move_c     = (cur_c - 1)
+        | otherwise                 = (-1)
 
 --Helper: assumes that the jump is legal
 getJTileColMid :: Int -> Int -> Int
 getJTileColMid cur_c move_c
-        | cur_c == 0                                                        = 1
-        | cur_c == 1 && move_c == 0                                = 0
-        | cur_c == 1 && move_c == 2                                = 1
-        | cur_c == 2                                                        = 1
-        | otherwise                                                                = (-1)
+        | cur_c == 0                    = 1
+        | cur_c == 1 && move_c == 0     = 0
+        | cur_c == 1 && move_c == 2     = 1
+        | cur_c == 2                    = 1
+        | otherwise                     = (-1)
 
 replace :: [a] -> Int -> Int -> a -> [a]
 replace arr index cnt rep
-        | null arr                                 = arr
-        | index == cnt                        = rep : (tail arr)
-        | otherwise                                = (head arr) : (replace (tail arr) index (cnt + 1) rep)
+        | null arr                      = arr
+        | index == cnt                  = rep : (tail arr)
+        | otherwise                     = (head arr) : (replace (tail arr) index (cnt + 1) rep)
 
 getTile :: [[a]] -> Int -> Int -> a
 getTile board row col = 
