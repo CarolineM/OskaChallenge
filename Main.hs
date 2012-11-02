@@ -32,7 +32,7 @@ statesearch unexplored moves player
 			  					'b'
 			  					else
 			  						'w'
---TODO
+
 genNewStates :: [String] -> Char -> [[String]]
 genNewStates board player = genNewStatesHelper board player (findTiles board player 0 0)
 
@@ -67,10 +67,8 @@ genNewStatesforPiece board c r count_r
 
 
 
--- get possible moves for a single piece at given roll
--- movesForPieceAtRow maze1 1 0 0 1 -- *This is not a valid move to check because there is no peice there.*
--- returns [["w-w-","w-w","--","---","bbbb"],["w-w-","-ww","--","---","bbbb"]]
--- //the col parameter is a counter, so always start at 0
+-- get possible moves for a single piece at given row
+-- the col parameter is a counter, so always start at 0
 movesForPieceAtRow :: [String] -> Int -> Int -> Int -> Int -> [[String]]
 movesForPieceAtRow board row col piece_r piece_c 
         | ((length (getRow board row)) - 1) == col = newstate
@@ -78,7 +76,7 @@ movesForPieceAtRow board row col piece_r piece_c
         where
                 side     = (getTile board piece_r piece_c)
                 newstate = (do if (2 == (row-piece_r) || ((-2) == (row-piece_r))) 
-                                then (do if (isLegalMove board piece_r piece_c row col side) 
+                                then (do if (isLegalJump board piece_r piece_c row col side) 
                                            then (movesForPieceAtRowIfJump board row col piece_r piece_c 0) 
                                            else [])
                                 else (do if (isLegalMove board piece_r piece_c row col side) 
@@ -241,8 +239,9 @@ isLegalJump board cur_r cur_c move_r move_c side
         | side == 'b' && d_prime <= 0                     = False
         | (distance == 2) && 
                 (getJumpRow side cur_r) == mid_row &&
-                (isLegalMid cur_c move_c True)            = (mv_tile == '-') && (not ((jmp_tile == side) || (jmp_tile == '-')))
-        | (distance == 2) && valid_col_jmp                = (mv_tile == '-') && (not ((jmp_tile == side) || (jmp_tile == '-')))
+                (isLegalMid cur_c move_c True)            = (mv_tile == '-') && (not ((getJumpTime board cur_r cur_c mid_row move_c side == side) || (getJumpTime board cur_r cur_c mid_row move_c side  == '-')))
+        | (distance == 2) && valid_col_jmp &&
+                 not ((getJumpRow side cur_r) == mid_row) = (mv_tile == '-') && (not ((getJumpTime board cur_r cur_c mid_row move_c side == side) || (getJumpTime board cur_r cur_c mid_row move_c side == '-')))
         | otherwise                                       = False
         where
                 mid_row                      = div ((length board) - 1) 2 
@@ -252,10 +251,12 @@ isLegalJump board cur_r cur_c move_r move_c side
                 col_exists                   = (move_c >= 0) && (move_c < (length (getRow board move_r)))
                 valid_col_jmp                = (move_c == cur_c) || (move_c == (cur_c - 2)) 
                 mv_tile                      = getTile board move_r move_c
-                jmp_tile                      = if (isJumpMid cur_r mid_row side) then
-                                                                getTile board (getJumpRow side cur_r)  (getJTileColMid cur_c move_c)
-                                                                else
-                                                                    getTile board (getJumpRow side cur_r) (getJTileColNorm cur_c move_c)
+
+getJumpTime board cur_r cur_c mid_row move_c side =
+    if (isJumpMid cur_r mid_row side) then
+        getTile board (getJumpRow side cur_r)  (getJTileColMid cur_c move_c)
+              else
+                getTile board (getJumpRow side cur_r) (getJTileColNorm cur_c move_c)
 
 --jump_r and jump_c should be negative if no jump
 genMove :: [String] -> Int -> Int -> Int -> Int -> Int -> Int -> [String]
@@ -306,9 +307,9 @@ count_in_row row player
 --Helper: assumes row and cols exist
 isLegalMid :: Int -> Int -> Bool -> Bool 
 isLegalMid cur_c move_c is_jmp 
-        | is_jmp && cur_c == 0         = move_c == 1
+        | is_jmp && cur_c == 0         = move_c == 2
         | is_jmp && cur_c == 1         = (move_c == 0) || (move_c == 2)
-        | is_jmp && cur_c == 2         = move_c == 1
+        | is_jmp && cur_c == 2         = move_c == 0
         | cur_c == 0                   = (move_c == 0) || (move_c == 1)
         | cur_c == 1                   = (move_c == 2) || (move_c == 1)
         | otherwise                    = False
@@ -316,7 +317,7 @@ isLegalMid cur_c move_c is_jmp
 --Helper
 isJumpMid :: Int -> Int -> Char -> Bool
 isJumpMid cur_r mid_row side = 
-        (((cur_r - 1 == mid_row) && side == 'w') || ((cur_r - 1 == mid_row) && side == 'b'))
+        (((cur_r + 1 == mid_row) && side == 'w') || ((cur_r - 1 == mid_row) && side == 'b'))
 
 
 --Helper: assumes that the jump is legal
@@ -337,7 +338,7 @@ getJTileColNorm cur_c move_c
 --Helper: assumes that the jump is legal
 getJTileColMid :: Int -> Int -> Int
 getJTileColMid cur_c move_c
-        | cur_c == 0                    = 1
+        | cur_c == 0                    = 0
         | cur_c == 1 && move_c == 0     = 0
         | cur_c == 1 && move_c == 2     = 1
         | cur_c == 2                    = 1
