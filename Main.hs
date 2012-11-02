@@ -1,6 +1,11 @@
 --Caroline McQuatt 
 --Peter Zhang
-maze1 = ["www-","--w","--","---","bbbb"];
+board1 = ["www-","--w","--","---","bbbb"]
+board2 = ["www-","--w","--","---","bbbb"]
+board3 = ["www-","---", "-w", "-b-", "b-bb"]
+board4 = ["w-www", "-w--", "---","-b","---", "----", "b-bbb"]
+
+
 data Tree a =
          Branch { 
             board :: [String], 
@@ -27,9 +32,6 @@ statesearch unexplored moves player
 			  					'b'
 			  					else
 			  						'w'
-
-
-
 --TODO
 genNewStates :: [String] -> Char -> [[String]]
 genNewStates board player = genNewStatesHelper board player (findTiles board player 0 0)
@@ -64,8 +66,8 @@ genNewStatesforPiece board c r count_r
         |  otherwise                = (movesForPieceAtRow board count_r 0 c r ) ++ (genNewStatesforPiece board c r (count_r+1))
 
 
-
--- get possible moves for a single piece at given roll.. does not account for jumps, havent figured out how to jump >_>
+-- bug at movesForPieceAtRow maze1 3 0 1 0 
+-- get possible moves for a single piece at given roll
 -- movesForPieceAtRow maze1 1 0 0 1
 -- returns [["w-w-","w-w","--","---","bbbb"],["w-w-","-ww","--","---","bbbb"]]
 movesForPieceAtRow :: [String] -> Int -> Int -> Int -> Int -> [[String]]
@@ -74,9 +76,22 @@ movesForPieceAtRow board row col piece_r piece_c
         |otherwise = newstate ++ (movesForPieceAtRow board row (col+1) piece_r piece_c)
         where
                 side     = (getTile board piece_r piece_c)
-                newstate = (do if (isLegalMove board piece_r piece_c row col side) 
-                                                        then [(genMove board piece_r piece_c row col (-111) (-111))] 
-                                                        else [])
+                newstate = (do if (2 == (row-piece_r) || ((-2) == (row-piece_r))) 
+                                then (do if (isLegalMove board piece_r piece_c row col side) 
+                                           then (movesForPieceAtRowIfJump board row col piece_r piece_c 0) 
+                                           else [])
+                                else (do if (isLegalMove board piece_r piece_c row col side) 
+                                           then [(genMove board piece_r piece_c row col (-111) (-111))] 
+                                           else []))
+
+
+movesForPieceAtRowIfJump :: [String] -> Int -> Int -> Int -> Int -> Int-> [[String]]
+movesForPieceAtRowIfJump board row col piece_r piece_c jcol_count 
+        | (col == piece_c) = [(genMove board piece_r piece_c row col (getJumpRow side piece_r) col)]
+        | (col == (2 + piece_c)) = [(genMove board piece_r piece_c row col (getJumpRow side piece_r) col)]
+        | otherwise = []
+        where
+                side     = (getTile board piece_r piece_c)
 
 analyze_board :: Tree [String] -> Char -> [String]
 analyze_board root side =
