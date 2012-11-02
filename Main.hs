@@ -66,7 +66,7 @@ genNewStatesforPiece board c r count_r
 
 
 -- get possible moves for a single piece at given roll.. does not account for jumps, havent figured out how to jump >_>
--- movesForPieceAtRow maze1 1 0 0 1
+-- movesForPieceAtRow maze1 1 0 0 1 -- *This is not a valid move to check because there is no peice there.*
 -- returns [["w-w-","w-w","--","---","bbbb"],["w-w-","-ww","--","---","bbbb"]]
 movesForPieceAtRow :: [String] -> Int -> Int -> Int -> Int -> [[String]]
 movesForPieceAtRow board row col piece_r piece_c 
@@ -188,13 +188,16 @@ offensive_rows board player =
 isLegalMove :: [String] -> Int -> Int -> Int -> Int -> Char -> Bool
 isLegalMove board cur_r cur_c move_r move_c side
         | (not row_exists) || (not col_exists)            = False
+        | side == 'w' && d_prime >= 0                     = False
+        | side == 'b' && d_prime <= 0                     = False
         | (distance == 1) && cur_r == mid_row 
         	&& (isLegalMid cur_c move_c False)            = mv_tile == '-' 
         | (distance == 1) && valid_col_reg                = mv_tile == '-'
         | otherwise                                       = False
         where
                 mid_row                      = div ((length board) - 1) 2
-                distance                     = abs (cur_r - move_r)
+                d_prime                      = cur_r - move_r
+                distance                     = abs d_prime
                 row_exists                   = (move_r >= 0) && (move_r < (length board)) 
                 col_exists                   = (move_c >= 0) && (move_c < (length (getRow board move_r))) 
                 valid_col_reg                = (move_c == cur_c) || (move_c == (cur_c - 1))
@@ -205,6 +208,8 @@ isLegalMove board cur_r cur_c move_r move_c side
 isLegalJump :: [String] -> Int -> Int -> Int -> Int -> Char -> Bool
 isLegalJump board cur_r cur_c move_r move_c side
         | (not row_exists) || (not col_exists)            = False
+        | side == 'w' && d_prime >= 0                     = False
+        | side == 'b' && d_prime <= 0                     = False
         | (distance == 2) && 
                 (getJumpRow side cur_r) == mid_row &&
                 (isLegalMid cur_c move_c True)            = (mv_tile == '-') && (not ((jmp_tile == side) || (jmp_tile == '-')))
@@ -212,7 +217,8 @@ isLegalJump board cur_r cur_c move_r move_c side
         | otherwise                                       = False
         where
                 mid_row                      = div ((length board) - 1) 2 
-                distance                     = abs (cur_r - move_r)
+                d_prime                      = cur_r - move_r
+                distance                     = abs d_prime 
                 row_exists                   = (move_r >= 0) && (move_r < (length board)) 
                 col_exists                   = (move_c >= 0) && (move_c < (length (getRow board move_r)))
                 valid_col_jmp                = (move_c == cur_c) || (move_c == (cur_c - 2)) 
