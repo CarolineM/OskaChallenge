@@ -15,7 +15,6 @@ oska_x1y2 board player moves =
         --(Branch board (statesearch [board] moves player))
 
 
---TODO check branches for cycles
 statesearch :: [[String]] -> Int -> Char -> [Tree [String]]
 statesearch unexplored moves player
 
@@ -117,15 +116,16 @@ totalboards lot lastmoved maxplayer
 										else
 											'w'
 
---TODO static board analysis
+--static board analysis
 totalboard :: [String] -> Char -> Int
 totalboard board player
-	| isWinningBoard board player							= 100
-	| isWinningBoard board opponent							= (-100)
-	| one_left_case board player 							= 50
-	| one_left_case board opponent 							= (-50)
+	| isWinningBoard board player							= 1000000
+	| isWinningBoard board opponent							= (-100000)
+	| one_left_case board player 							= 1000
+	| one_left_case board opponent 							= (-1000)
     | otherwise                                             = sum [0,  (test_blocked_from_end (collumn_num_with_test edgerow opponent 0) (collumn_num_with_test endrow '-' 0)),
-                                                                    (- (test_blocked_from_end (collumn_num_with_test edgerow player 0) (collumn_num_with_test endrow '-' 0)))]    
+                                                                    (- (test_blocked_from_end (collumn_num_with_test edgerow player 0) (collumn_num_with_test endrow '-' 0))),
+                                                                        (greater_num_players board player opponent), (num_player_in_end board player), (- (num_player_in_end board opponent))]    
 		where 
 			opponent	=	if player == 'w' then
   								'b'
@@ -140,7 +140,19 @@ totalboard board player
 								else
 									(board !! ((length board) -2))
 
+num_player_in_end :: [String] -> Char -> Int
+num_player_in_end board player =
+    ((count_in_row row player) * 20)
+    where row           = if player == 'w' then
+                            (board !! ((length board) - 1))
+                            else
+                                (head board)
 
+greater_num_players :: [String] -> Char -> Char -> Int
+greater_num_players board player opponent =
+    difference * 20
+            where
+                difference = number_pieces board player - number_pieces board opponent
 
 test_blocked_from_end :: (Eq a, Num a) => [a] -> [a] -> Int
 test_blocked_from_end pindex openindex
@@ -259,7 +271,7 @@ number_pieces board player
 isWinningBoard :: [String] -> Char -> Bool
 isWinningBoard board player
         | player == 'w'                  = number_pieces board 'b' == 0 || checklast board 0 ((length board) - 1) 'w'
-        | otherwise                      = number_pieces board 'w' == 0 || checklast board 0 0 'w'
+        | otherwise                      = number_pieces board 'w' == 0 || checklast board 0 0 'b'
 
 --helpers-------------------------------------------------------------------------
 checklast :: [String] -> Int -> Int -> Char -> Bool
