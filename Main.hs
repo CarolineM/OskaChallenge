@@ -12,6 +12,7 @@ data Tree a =
 oska_x1y2 :: [String] -> Char -> Int -> [String]
 oska_x1y2 board player moves = 
         analyze_board (Branch board (statesearch [board] moves player)) player
+        --(Branch board (statesearch [board] moves player))
 
 
 --TODO check branches for cycles
@@ -81,7 +82,7 @@ movesForPieceAtRow board row col piece_r piece_c
 analyze_board :: Tree [String] -> Char -> [String]
 analyze_board root side =
 	if null (children root) then
-		(board root) -- TODO test. should mean no available moves, so return root
+		(board root) -- means no available moves, so return root
 		else
 			getboard branch_scores max_score				
 		where 
@@ -97,19 +98,19 @@ getboard branch_scores max_score
 
 total_branch :: Tree [String] -> Char -> ([String], Int)
 total_branch b_root side = 
-	((board b_root), ((totalboard (board b_root) side) + (totalboards (children b_root) next_player side)))
+	((board b_root), (head (totalboards (children b_root) next_player side)))
 	where
 		next_player 			= if side == 'w' then
 										'b'
 										else
 											'w'
---TODO this is wrong
-totalboards :: [Tree [String]] -> Char -> Char -> Int
+
+totalboards :: [Tree [String]] -> Char -> Char -> [Int]
 totalboards lot lastmoved maxplayer
-	| null lot						= 0
-	| otherwise						= (totalboard (board (head lot)) lastmoved) + 
-										(totalboards (children (head lot)) next_player maxplayer) + 
-										(totalboards (tail lot) lastmoved maxplayer)
+	| null lot						= []
+    | null (children (head lot))    = totalboard (board (head lot)) maxplayer : (totalboards (tail lot) lastmoved maxplayer)
+    | lastmoved == maxplayer        = minimum (totalboards (children (head lot)) next_player maxplayer) : (totalboards (tail lot) lastmoved maxplayer)
+	| otherwise						= maximum (totalboards (children (head lot)) next_player maxplayer) : (totalboards (tail lot) lastmoved maxplayer)								
 		where 
 			next_player 			= if lastmoved == 'w' then
 										'b'
@@ -123,13 +124,8 @@ totalboard board player
 	| isWinningBoard board opponent							= (-100)
 	| one_left_case board player 							= 50
 	| one_left_case board opponent 							= (-50)
-	| test_blocked_from_end 
-		(collumn_num_with_test edgerow opponent 0)
-		(collumn_num_with_test endrow '-' 0)				= 20 --opponenet is blocked from winning 
-	| test_blocked_from_end 
-		(collumn_num_with_test edgerow player 0)
-		(collumn_num_with_test endrow '-' 0)				= (-20) --player is blocked from winning
-
+    | otherwise                                             = sum [0,  (test_blocked_from_end (collumn_num_with_test edgerow opponent 0) (collumn_num_with_test endrow '-' 0)),
+                                                                    (- (test_blocked_from_end (collumn_num_with_test edgerow player 0) (collumn_num_with_test endrow '-' 0)))]    
 		where 
 			opponent	=	if player == 'w' then
   								'b'
@@ -145,15 +141,20 @@ totalboard board player
 									(board !! ((length board) -2))
 
 
-test_blocked_from_end pindex openindex =
-	(not (null pindex)) && (blocked_from_end pindex openindex)
 
+test_blocked_from_end :: (Eq a, Num a) => [a] -> [a] -> Int
+test_blocked_from_end pindex openindex
+    | (not (null pindex)) && (blocked_from_end pindex openindex) = 20
+    | otherwise                                                  = 0
+
+blocked_from_end :: (Eq a, Num a) => [a] -> [a] -> Bool
 blocked_from_end pindex openindex
 	| null pindex						= True
 	| elem (head pindex) openindex || elem ((head pindex) + 1) openindex
 										= False
 	| otherwise 						= True && blocked_from_end (tail pindex) openindex
 
+collumn_num_with_test :: (Eq a1, Num a) => [a1] -> a1 -> a -> [a]
 collumn_num_with_test row test_value i
 	| null row	   						= []
 	| (head row) == test_value			= i : collumn_num_with_test (tail row) test_value (i + 1)
