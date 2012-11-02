@@ -104,7 +104,10 @@ getboard_p1t7 branch_scores max_score
 
 total_branch_p1t7 :: Tree [String] -> Char -> ([String], Int)
 total_branch_p1t7 b_root side = 
-	((board b_root), (head (totalboards_p1t7 (children b_root) next_player side)))
+    if null (children b_root) then
+        ((board b_root), totalboard_p1t7 (board b_root) side)
+        else
+	       ((board b_root), (head (totalboards_p1t7 (children b_root) next_player side)))
 	where
 		next_player 			= if side == 'w' then
 										'b'
