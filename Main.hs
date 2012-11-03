@@ -205,11 +205,12 @@ offensive_rows_p1t7 board player =
 isLegalMove_p1t7 :: [String] -> Int -> Int -> Int -> Int -> Char -> Bool
 isLegalMove_p1t7 board cur_r cur_c move_r move_c side
         | (not row_exists) || (not col_exists)            = False
+        | not (distance == 1)                             = False
         | side == 'w' && d_prime >= 0                     = False
         | side == 'b' && d_prime <= 0                     = False
-        | (distance == 1) && cur_r == mid_row 
+        | cur_r == mid_row 
         	&& (isLegalMid_p1t7 cur_c move_c False)       = mv_tile == '-' 
-        | (distance == 1) && valid_col_reg                = mv_tile == '-'
+        |  valid_col_reg && not (cur_r == mid_row)        = mv_tile == '-'
         | otherwise                                       = False
         where
                 mid_row                      = div ((length board) - 1) 2
