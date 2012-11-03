@@ -224,7 +224,7 @@ isLegalMove_p1t7 board cur_r cur_c move_r move_c side
 --does not check for valid starting indexes or tile, must be correct
 makeJump_p1t7 :: [String] -> Int -> Int -> Int -> Int -> Char -> [String]
 makeJump_p1t7 board cur_r cur_c move_r move_c side
-        | distance != 2                                                                         = []
+        | not (distance == 2)                                                                   = []
         | (not row_exists) || (not col_exists)                                                  = []
         | side == 'w' && d_prime >= 0                                                           = []
         | side == 'b' && d_prime <= 0                                                           = []
@@ -256,7 +256,7 @@ getJumpTile_p1t7 board cur_r cur_c mid_row move_c side =
 --jump_r and jump_c should be negative if no jump
 genMove_p1t7 :: [String] -> Int -> Int -> Int -> Int -> Int -> Int -> [String]
 genMove_p1t7 board cur_r cur_c move_r move_c jump_r jump_c = do
-        if ((jump_c <= 0) || (jump_r <= 0)) then
+        if ((jump_c < 0) || (jump_r < 0)) then
                 (replace_p1t7 
                         (replace_p1t7 board cur_r 0 new_cur_row) move_r 0 new_move_row)
                 else
@@ -302,9 +302,9 @@ count_in_row_p1t7 row player
 --Helper: assumes row and cols exist
 isLegalMid_p1t7 :: Int -> Int -> Bool -> Bool 
 isLegalMid_p1t7 cur_c move_c is_jmp 
-        | is_jmp && cur_c == 0         = move_c == 2
+        | is_jmp && cur_c == 0         = move_c == 1
         | is_jmp && cur_c == 1         = (move_c == 0) || (move_c == 2)
-        | is_jmp && cur_c == 2         = move_c == 0
+        | is_jmp && cur_c == 2         = move_c == 1
         | cur_c == 0                   = (move_c == 0) || (move_c == 1)
         | cur_c == 1                   = (move_c == 2) || (move_c == 1)
         | otherwise                    = False
