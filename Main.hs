@@ -125,28 +125,32 @@ totalboard_p1t7 :: [String] -> Char -> Int
 totalboard_p1t7 board player
 	| isWinningBoard_p1t7 board player							= 1000000
 	| isWinningBoard_p1t7 board opponent						= (-100000)
-	| one_left_case_p1t7 board player 							= 1000
 	| one_left_case_p1t7 board opponent 						= (-1000)
-    | otherwise                                                 = sum [0,  (test_blocked_from_end_p1t7 (collumn_num_with_test_p1t7 edgerow opponent 0) (collumn_num_with_test_p1t7 endrow '-' 0)),
+    | otherwise                                                 = sum [0, (test_blocked_from_end_p1t7 (collumn_num_with_test_p1t7 edgerow opponent 0) (collumn_num_with_test_p1t7 endrow '-' 0)),
                                                                     (- (test_blocked_from_end_p1t7 (collumn_num_with_test_p1t7 edgerow player 0) (collumn_num_with_test_p1t7 endrow '-' 0))),
-                                                                        (greater_num_players_p1t7 board player opponent), (num_player_in_end_p1t7 board player), (- (num_player_in_end_p1t7 board opponent))]    
+                                                                        (greater_num_players_p1t7 board player opponent), (num_player_in_end_p1t7 board player), 
+                                                                        (- (num_player_in_end_p1t7 board opponent)), oneleft]    
 		where 
-			opponent	=	if player == 'w' then
+            opponent	=	if player == 'w' then
   								'b'
   								else
   									'w' 
-  			endrow		=	if player == 'b' then
+            endrow		=	if player == 'b' then
 							 	(board !! 0)
 								else
 									(board !! ((length board) -1))
-			edgerow		=	if player == 'b' then
+            edgerow		=	if player == 'b' then
 							 	(board !! 1)
 								else
 									(board !! ((length board) -2))
+            oneleft     =   if (one_left_case_p1t7 board player) then
+                                60
+                                else
+                                    0
 
 num_player_in_end_p1t7 :: [String] -> Char -> Int
 num_player_in_end_p1t7 board player =
-    ((count_in_row_p1t7 row player) * 20)
+    ((count_in_row_p1t7 row player) * 30)
     where row           = if player == 'w' then
                             (board !! ((length board) - 1))
                             else
