@@ -33,7 +33,7 @@ genNewStates_p1t7 board player = genNewStatesHelper_p1t7 board player (findTiles
 genNewStatesHelper_p1t7 :: [String] -> Char ->  [(Int,Int)]-> [[String]]
 genNewStatesHelper_p1t7 board side locs 
         | locs == [] = []
-        | otherwise  = (genNewStatesforPiece_p1t7 board (fst (head locs)) (snd (head locs)) 0) ++ (genNewStatesHelper_p1t7 board side (tail locs))
+        | otherwise  = (filter (\x -> (not (null x))) (genNewStatesforPiece_p1t7 board (fst (head locs)) (snd (head locs)) 0)) ++ (genNewStatesHelper_p1t7 board side (tail locs))
 
 
 -- assumes the first list inside board is 0 row
@@ -55,8 +55,11 @@ findTilesOnRow_p1t7 row side countx y
 -- returns [["ww--","-ww","--","---","bbbb"]]
 genNewStatesforPiece_p1t7 ::[String] -> Int -> Int ->  Int -> [[String]]
 genNewStatesforPiece_p1t7 board c r count_r
-        | ((length board) - 1) == count_r   = (movesForPieceAtRow_p1t7 board count_r 0 r c)
-        |  otherwise                        = (movesForPieceAtRow_p1t7 board count_r 0 r c) ++ (genNewStatesforPiece_p1t7 board c r (count_r+1))
+        | (length board) == count_r         = []
+        |  otherwise                        = if (abs r - count_r) > 2 then
+                                                (genNewStatesforPiece_p1t7 board c r (count_r+1))
+                                                else
+                                                    (movesForPieceAtRow_p1t7 board count_r 0 r c) ++ (genNewStatesforPiece_p1t7 board c r (count_r+1))
 
 
 
@@ -64,26 +67,17 @@ genNewStatesforPiece_p1t7 board c r count_r
 -- the col parameter is a counter, so always start at 0
 movesForPieceAtRow_p1t7 :: [String] -> Int -> Int -> Int -> Int -> [[String]]
 movesForPieceAtRow_p1t7 board row col piece_r piece_c 
-        | ((length (getRow_p1t7 board row)) - 1) == col             = newstate
-        | otherwise                                                 = newstate ++ (movesForPieceAtRow_p1t7 board row (col+1) piece_r piece_c)
+        | ((length (getRow_p1t7 board row))) == col                 = []
+        | otherwise                                                 = newstate : (movesForPieceAtRow_p1t7 board row (col+1) piece_r piece_c)
         where
                 side     = (getTile_p1t7 board piece_r piece_c)
                 newstate = (do if (2 == (row-piece_r) || ((-2) == (row-piece_r))) 
-                                then (do if (isLegalJump_p1t7 board piece_r piece_c row col side) 
-                                           then (movesForPieceAtRowIfJump_p1t7 board row col piece_r piece_c 0) 
-                                           else [])
+                                then (makeJump_p1t7 board piece_r piece_c row col side) 
                                 else (do if (isLegalMove_p1t7 board piece_r piece_c row col side) 
-                                           then [(genMove_p1t7 board piece_r piece_c row col (-111) (-111))] 
+                                           then (genMove_p1t7 board piece_r piece_c row col (-111) (-111)) 
                                            else []))
 
 
-movesForPieceAtRowIfJump_p1t7 :: [String] -> Int -> Int -> Int -> Int -> Int-> [[String]]
-movesForPieceAtRowIfJump_p1t7 board row col piece_r piece_c jcol_count 
-        | (col == piece_c)                      = [(genMove_p1t7 board piece_r piece_c row col (getJumpRow_p1t7 side piece_r) col)]
-        | (col == (2 + piece_c))                = [(genMove_p1t7 board piece_r piece_c row col (getJumpRow_p1t7 side piece_r) col)]
-        | otherwise                             = []
-        where
-                side     = (getTile_p1t7 board piece_r piece_c)
 
 analyze_board_p1t7 :: Tree [String] -> Char -> [String]
 analyze_board_p1t7 root side =
@@ -228,17 +222,21 @@ isLegalMove_p1t7 board cur_r cur_c move_r move_c side
 
 
 --does not check for valid starting indexes or tile, must be correct
-isLegalJump_p1t7 :: [String] -> Int -> Int -> Int -> Int -> Char -> Bool
-isLegalJump_p1t7 board cur_r cur_c move_r move_c side
-        | (not row_exists) || (not col_exists)            = False
-        | side == 'w' && d_prime >= 0                     = False
-        | side == 'b' && d_prime <= 0                     = False
-        | (distance == 2) && 
-                (getJumpRow_p1t7 side cur_r) == mid_row &&
-                (isLegalMid_p1t7 cur_c move_c True)       = (mv_tile == '-') && (not ((getJumpTile_p1t7 board cur_r cur_c mid_row move_c side == side) || (getJumpTile_p1t7 board cur_r cur_c mid_row move_c side  == '-')))
-        | (distance == 2) && valid_col_jmp &&
-                 not ((getJumpRow_p1t7 side cur_r) == mid_row) = (mv_tile == '-') && (not ((getJumpTile_p1t7 board cur_r cur_c mid_row move_c side == side) || (getJumpTile_p1t7 board cur_r cur_c mid_row move_c side == '-')))
-        | otherwise                                       = False
+makeJump_p1t7 :: [String] -> Int -> Int -> Int -> Int -> Char -> [String]
+makeJump_p1t7 board cur_r cur_c move_r move_c side
+        | distance != 2                                                                         = []
+        | (not row_exists) || (not col_exists)                                                  = []
+        | side == 'w' && d_prime >= 0                                                           = []
+        | side == 'b' && d_prime <= 0                                                           = []
+        | ((getJumpRow_p1t7 side cur_r) == mid_row) && (isLegalMid_p1t7 cur_c move_c True) &&
+                ((mv_tile == '-') && 
+                    (not ((getJumpTile_p1t7 board cur_r cur_c mid_row move_c side == side) 
+                        || (getJumpTile_p1t7 board cur_r cur_c mid_row move_c side  == '-'))))  = genMove_p1t7 board cur_r cur_c move_r move_c (getJumpRow_p1t7 side cur_r) (getJTileColMid_p1t7 cur_c move_c) 
+        | valid_col_jmp && not ((getJumpRow_p1t7 side cur_r) == mid_row) && 
+                 ((mv_tile == '-') && 
+                    (not ((getJumpTile_p1t7 board cur_r cur_c mid_row move_c side == side) || 
+                        (getJumpTile_p1t7 board cur_r cur_c mid_row move_c side == '-'))))     = genMove_p1t7 board cur_r cur_c move_r move_c (getJumpRow_p1t7 side cur_r) (getJTileColNorm_p1t7 cur_c move_c) 
+        | otherwise                                                                            = []
         where
                 mid_row                      = div ((length board) - 1) 2 
                 d_prime                      = cur_r - move_r
