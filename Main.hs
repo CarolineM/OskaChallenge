@@ -1,5 +1,5 @@
---Caroline McQuatt 
---Peter Zhang
+ --Caroline McQuatt 36959104
+--Peter Zhang 30607105
 data Tree a =
          Branch { 
             board :: [String], 
